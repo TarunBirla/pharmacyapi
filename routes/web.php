@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\AiAnalyticsWebController;
 use App\Http\Controllers\Web\AuditWebController;
 use App\Http\Controllers\Web\InventoryWebController;
 use App\Http\Controllers\Web\PosWebController;
+use App\Http\Controllers\Web\ProfileWebController;
 use App\Http\Controllers\Web\ProcurementWebController;
 use App\Http\Controllers\Web\ReportWebController;
 use App\Http\Controllers\Web\SalesWebController;
@@ -135,4 +136,9 @@ Route::middleware(['auth'])->group(function () {
 
     // System Security & Audit Trail
     Route::get('/audit', [AuditWebController::class, 'index'])->name('audit.index');
+
+    // User Role Profile & PWA App
+    Route::get('/profile', [ProfileWebController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileWebController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileWebController::class, 'updatePassword'])->name('profile.password');
 });

@@ -250,4 +250,82 @@ class BladeFrontendWebTest extends TestCase
             'organization_id' => $user->organization_id,
         ]);
     }
+
+    public function test_user_can_access_role_profile_section_and_view_pwa_download(): void
+    {
+        $user = User::where('email', 'pharmacist@apollocare.com')->first();
+        $this->assertNotNull($user);
+
+        $response = $this->actingAs($user)->get('/profile');
+
+        $response->assertStatus(200);
+        $response->assertSee('User Role Profile');
+        $response->assertSee('Download & Install Apex Pharma ERP on Desktop & Mobile', false);
+        $response->assertSee('Install to PC / Mobile Screen');
+        $response->assertSee('Role Permissions Matrix');
+        $response->assertSee('Drug License 20B/21B');
+        $response->assertSee('Your Recent Activity Log');
+    }
+
+    public function test_user_can_update_profile_details(): void
+    {
+        $user = User::where('email', 'pharmacist@apollocare.com')->first();
+        $this->assertNotNull($user);
+
+        $response = $this->actingAs($user)->put('/profile', [
+            'name' => 'Dr. Pharmacist Updated',
+            'phone' => '9876543210',
+            'pharmacist_reg_number' => 'MH-PH-2026-9988',
+        ]);
+
+        $response->assertRedirect('/profile');
+        $response->assertSessionHas('success');
+
+        $user->refresh();
+        $this->assertEquals('Dr. Pharmacist Updated', $user->name);
+        $this->assertEquals('9876543210', $user->phone);
+        $this->assertEquals('MH-PH-2026-9988', $user->pharmacist_reg_number);
+    }
+
+    public function test_user_can_update_profile_password(): void
+    {
+        $user = User::where('email', 'cashier@apollocare.com')->first();
+        $this->assertNotNull($user);
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make('Password123!')]);
+
+        $response = $this->actingAs($user)->put('/profile/password', [
+            'current_password' => 'Password123!',
+            'password' => 'NewSecurePass2026!',
+            'password_confirmation' => 'NewSecurePass2026!',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect('/profile');
+        $response->assertSessionHas('success');
+
+        // Restore original password for other tests
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make('Password123!')]);
+    }
+
+    public function test_pwa_manifest_and_service_worker_are_accessible(): void
+    {
+        // Test manifest.json
+        $manifestPath = public_path('manifest.json');
+        $this->assertFileExists($manifestPath);
+        $manifestData = json_decode(file_get_contents($manifestPath), true);
+        $this->assertEquals('Apex Pharma ERP & Marg POS', $manifestData['name']);
+        $this->assertEquals('standalone', $manifestData['display']);
+        $this->assertNotEmpty($manifestData['icons']);
+
+        // Test sw.js
+        $swPath = public_path('sw.js');
+        $this->assertFileExists($swPath);
+        $swContent = file_get_contents($swPath);
+        $this->assertStringContainsString('CACHE_NAME', $swContent);
+        $this->assertStringContainsString('fetch', $swContent);
+
+        // Test icons
+        $this->assertFileExists(public_path('icons/icon-192.png'));
+        $this->assertFileExists(public_path('icons/icon-512.png'));
+    }
 }

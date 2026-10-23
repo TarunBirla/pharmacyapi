@@ -59,11 +59,11 @@ class WebAuthController extends Controller
 
             // Role-based smart redirection
             if ($user->hasRole('purchase_manager')) {
-                return redirect()->intended(route('procurement.index'))
+                return redirect()->to(route('procurement.index'))
                     ->with('success', "Welcome back, {$user->name}!");
             }
 
-            return redirect()->intended(route('pos.index'))
+            return redirect()->to(route('pos.index'))
                 ->with('success', "Welcome back, {$user->name}!");
         }
 

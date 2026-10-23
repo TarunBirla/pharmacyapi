@@ -6,6 +6,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Apex Pharma ERP') - Pharmacy Management & POS</title>
     
+    <!-- PWA Manifest & App Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#059669">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ApexPharma">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
     <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -96,13 +105,18 @@
                     </button>
                 </div>
 
-                <!-- User Role Profile Pill -->
-                <div class="p-3 mx-3 mt-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-700 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                <!-- User Role Profile Pill (Clickable to /profile) -->
+                <a href="{{ route('profile.index') }}" 
+                   title="View your Role Profile & PWA Settings"
+                   class="p-3 mx-3 mt-3 bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 rounded-xl flex items-center gap-2.5 transition group">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-700 group-hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0 transition">
                         {{ strtoupper(substr($authUser?->name ?? 'U', 0, 1)) }}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="text-xs font-bold text-slate-900 truncate leading-tight">{{ $authUser?->name }}</div>
+                        <div class="text-xs font-bold text-slate-900 group-hover:text-emerald-900 truncate leading-tight flex items-center justify-between">
+                            <span>{{ $authUser?->name }}</span>
+                            <i class="fa-solid fa-chevron-right text-[9px] text-slate-400 group-hover:text-emerald-600 transition"></i>
+                        </div>
                         <div class="text-[10px] flex items-center gap-1 mt-0.5">
                             @if($isSuperAdmin)
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-bold border border-purple-200 text-[9px]">
@@ -129,7 +143,7 @@
                             @endif
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <!-- Navigation Links (Role Wise) -->
                 <nav class="flex-1 px-3 py-3 space-y-4 overflow-y-auto text-xs font-semibold">
@@ -266,6 +280,33 @@
                     </div>
                     @endif
 
+                    <!-- Section: My Account & PWA App -->
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1.5">
+                            My Account & App
+                        </div>
+                        <div class="space-y-1">
+                            <a href="{{ route('profile.index') }}" 
+                               class="flex items-center justify-between px-2.5 py-2 rounded-xl transition {{ request()->routeIs('profile.*') ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-id-card-clip w-4 text-center {{ request()->routeIs('profile.*') ? 'text-white' : 'text-emerald-600' }}"></i>
+                                    <span>My Role Profile</span>
+                                </div>
+                                <span class="text-[9px] font-mono px-1 py-0.5 rounded {{ request()->routeIs('profile.*') ? 'bg-emerald-700 text-white' : 'bg-slate-200/70 text-slate-500' }}">PRO</span>
+                            </a>
+
+                            <button type="button" 
+                                    onclick="installPwaApp()" 
+                                    class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 transition text-left">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-download w-4 text-center text-emerald-600"></i>
+                                    <span class="font-bold">Download App</span>
+                                </div>
+                                <span class="text-[9px] bg-emerald-600 text-white font-mono px-1.5 py-0.5 rounded font-extrabold shadow-sm">PWA</span>
+                            </button>
+                        </div>
+                    </div>
+
                 </nav>
             </div>
 
@@ -338,24 +379,36 @@
                     </div>
                     @endif
 
-                    <!-- User Quick Menu -->
-                    <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
-                        <div class="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs">
+                    <!-- Download App (PWA) Button -->
+                    <button type="button" 
+                            onclick="installPwaApp()" 
+                            title="Install Apex Pharma ERP on Desktop or Mobile"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 shadow-sm transition">
+                        <i class="fa-solid fa-download text-emerald-600"></i>
+                        <span class="hidden md:inline">Download App</span>
+                        <span class="text-[9px] bg-emerald-600 text-white font-mono px-1.5 py-0.5 rounded font-black shadow-sm">PWA</span>
+                    </button>
+
+                    <!-- User Quick Menu (Links to /profile) -->
+                    <a href="{{ route('profile.index') }}" 
+                       title="View My Role Profile & Permissions"
+                       class="flex items-center gap-2 pl-2 border-l border-slate-200 hover:opacity-85 transition group">
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-emerald-50 border border-slate-200 group-hover:border-emerald-300 flex items-center justify-center text-slate-700 group-hover:text-emerald-700 font-bold text-xs transition">
                             {{ strtoupper(substr($authUser?->name ?? 'U', 0, 1)) }}
                         </div>
                         <div class="hidden lg:block text-left">
-                            <div class="text-xs font-bold text-slate-800 truncate max-w-[120px] leading-tight">{{ $authUser?->name }}</div>
+                            <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-700 truncate max-w-[120px] leading-tight">{{ $authUser?->name }}</div>
                             <div class="text-[10px] text-slate-400 font-semibold">{{ $userRoleName }}</div>
                         </div>
+                    </a>
 
-                        <!-- Top Navbar Logout Button -->
-                        <form action="{{ route('logout') }}" method="POST" class="ml-1">
-                            @csrf
-                            <button type="submit" title="Logout session" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
-                                <i class="fa-solid fa-power-off text-sm"></i>
-                            </button>
-                        </form>
-                    </div>
+                    <!-- Top Navbar Logout Button -->
+                    <form action="{{ route('logout') }}" method="POST" class="ml-1">
+                        @csrf
+                        <button type="submit" title="Logout session" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
+                            <i class="fa-solid fa-power-off text-sm"></i>
+                        </button>
+                    </form>
 
                 </div>
             </header>
@@ -397,7 +450,63 @@
         </div>
     </div>
 
-    <!-- Mobile Drawer & Hotkeys Scripts -->
+    <!-- Universal PWA Installation Guide Modal -->
+    <div id="pwaGuideModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-download"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Download & Install Apex Pharma App</h3>
+                        <p class="text-[11px] text-slate-500">Progressive Web Application (PWA)</p>
+                    </div>
+                </div>
+                <button onclick="closePwaModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-600">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 mb-1">
+                        <i class="fa-brands fa-chrome text-amber-500"></i>
+                        <i class="fa-brands fa-edge text-blue-500"></i>
+                        <span>Windows PC / Mac (Chrome, Edge):</span>
+                    </div>
+                    <p class="leading-relaxed">Click the <strong>Install</strong> icon in the address bar (the monitor with down arrow <i class="fa-solid fa-download text-slate-400"></i> or <strong>(+)</strong>) or click the <strong>Install App</strong> button in this ERP.</p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 mb-1">
+                        <i class="fa-brands fa-android text-emerald-500"></i>
+                        <span>Android Phones & Tablets:</span>
+                    </div>
+                    <p class="leading-relaxed">Tap the 3-dots menu <i class="fa-solid fa-ellipsis-vertical text-slate-400"></i> in Chrome and select <strong>"Install App"</strong> or <strong>"Add to Home screen"</strong>.</p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 mb-1">
+                        <i class="fa-brands fa-apple text-slate-800"></i>
+                        <span>Apple iOS (iPhone / iPad - Safari):</span>
+                    </div>
+                    <p class="leading-relaxed">Tap the Share button <i class="fa-solid fa-arrow-up-from-bracket text-slate-400"></i> in Safari, scroll down, and select <strong>"Add to Home Screen"</strong>.</p>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="closePwaModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+                    Close
+                </button>
+                <button type="button" onclick="triggerNativePwaInstall()" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition">
+                    Try Install Prompt Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Drawer, Hotkeys & PWA Service Worker Scripts -->
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
@@ -433,6 +542,68 @@
                 window.location.href = "{{ route('sales.index') }}";
             }
         });
+
+        // -------------------------------------------------------------
+        // Progressive Web App (PWA) Handler & Service Worker
+        // -------------------------------------------------------------
+        let deferredPwaPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            window.deferredPrompt = e;
+            console.log('Apex Pharma PWA install prompt captured.');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('Apex Pharma PWA was installed successfully!');
+            deferredPwaPrompt = null;
+            window.deferredPrompt = null;
+        });
+
+        function installPwaApp() {
+            if (deferredPwaPrompt || window.deferredPrompt) {
+                const promptEvent = deferredPwaPrompt || window.deferredPrompt;
+                promptEvent.prompt();
+                promptEvent.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted PWA installation');
+                    }
+                    deferredPwaPrompt = null;
+                    window.deferredPrompt = null;
+                });
+            } else {
+                // If browser prompt is not ready or user already has app, show install guide modal
+                const modal = document.getElementById('pwaGuideModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
+            }
+        }
+
+        function triggerNativePwaInstall() {
+            if (deferredPwaPrompt || window.deferredPrompt) {
+                installPwaApp();
+                closePwaModal();
+            } else {
+                alert('Native prompt not available yet in this browser session. Please follow the instructions above (Address Bar Install Icon / 3-dots > Install App).');
+            }
+        }
+
+        function closePwaModal() {
+            const modal = document.getElementById('pwaGuideModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then((registration) => {
+                    console.log('ServiceWorker registered with scope:', registration.scope);
+                }).catch((error) => {
+                    console.log('ServiceWorker registration note:', error);
+                });
+            });
+        }
     </script>
     @stack('scripts')
 </body>
