@@ -12,11 +12,12 @@ class UserAndBranchManagementTest extends TestCase
     {
         $owner = User::withoutGlobalScopes()->where('email', 'owner@apexpharma.com')->first();
         $token = $owner->createToken('OwnerToken')->plainTextToken;
+        $uniqueEmail = 'pharmacist.' . uniqid() . '@apexpharma.com';
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson('/api/v1/users', [
                 'name' => 'Kavitha R. (Pharmacist)',
-                'email' => 'kavitha.r@apexpharma.com',
+                'email' => $uniqueEmail,
                 'phone' => '+91 9911223344',
                 'pharmacist_reg_number' => 'KA-PHARM-2022-77441',
                 'password' => 'SecurePass123!',
@@ -27,13 +28,13 @@ class UserAndBranchManagementTest extends TestCase
             ->assertJson([
                 'success' => true,
                 'data' => [
-                    'email' => 'kavitha.r@apexpharma.com',
+                    'email' => $uniqueEmail,
                     'pharmacist_reg_number' => 'KA-PHARM-2022-77441',
                 ]
             ]);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'kavitha.r@apexpharma.com',
+            'email' => $uniqueEmail,
             'organization_id' => $owner->organization_id,
         ]);
     }
