@@ -93,19 +93,40 @@ class ProcurementWebController extends Controller
         ]);
 
         try {
-            $data = $request->all();
-            $data['branch_id'] = session('active_branch_id', $user->branch_id);
+            $branchId = session('active_branch_id', $user->branch_id);
+            $warehouse = \App\Models\Warehouse::where('branch_id', $branchId)->first();
+
+            $data = [
+                'supplier_id' => $validated['supplier_id'],
+                'invoice_number' => $validated['supplier_invoice_number'],
+                'invoice_date' => $validated['invoice_date'],
+                'due_date' => $validated['due_date'] ?? null,
+                'warehouse_id' => $warehouse?->id,
+                'items' => array_map(function ($it) {
+                    return [
+                        'product_id' => $it['product_id'],
+                        'batch_number' => $it['batch_number'],
+                        'expiry_date' => $it['expiry_date'],
+                        'quantity' => (float)($it['billed_quantity'] ?? $it['quantity']),
+                        'free_quantity' => (float)($it['free_quantity'] ?? 0),
+                        'unit_cost' => (float)($it['purchase_rate'] ?? $it['unit_cost']),
+                        'mrp' => (float)$it['mrp'],
+                        'gst_rate' => (float)($it['gst_rate'] ?? 12),
+                        'discount_percent' => (float)($it['discount_percent'] ?? 0),
+                    ];
+                }, $validated['items']),
+            ];
 
             $invoice = $this->procurementService->postSupplierInvoice($data, $user);
 
             AuditLogService::log(
                 action: 'purchase.post',
-                description: "Posted supplier bill #{$invoice->supplier_invoice_number} from {$invoice->supplier->name} for ₹{$invoice->net_amount}",
+                description: "Posted supplier bill #{$invoice->invoice_number} from {$invoice->supplier->name} for ₹{$invoice->net_amount}",
                 entity: $invoice
             );
 
             return redirect()->route('procurement.index', ['tab' => 'invoices'])
-                ->with('success', "Supplier invoice #{$invoice->supplier_invoice_number} posted and inventory updated!");
+                ->with('success', "Supplier invoice #{$invoice->invoice_number} posted and inventory updated!");
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }

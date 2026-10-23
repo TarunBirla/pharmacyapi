@@ -55,6 +55,13 @@ class Product extends Model
         'is_narcotic' => 'boolean',
     ];
 
+    protected $appends = [
+        'mrp',
+        'purchase_rate',
+        'retail_price',
+        'barcode',
+    ];
+
     public function genericComposition(): BelongsTo
     {
         return $this->belongsTo(GenericComposition::class);
@@ -103,6 +110,29 @@ class Product extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function getMrpAttribute(): float
+    {
+        $batch = $this->batches->sortByDesc('created_at')->first();
+        return $batch ? (float)$batch->mrp : 0.00;
+    }
+
+    public function getPurchaseRateAttribute(): float
+    {
+        $batch = $this->batches->sortByDesc('created_at')->first();
+        return $batch ? (float)$batch->purchase_rate : 0.00;
+    }
+
+    public function getRetailPriceAttribute(): float
+    {
+        $batch = $this->batches->sortByDesc('created_at')->first();
+        return $batch ? (float)($batch->sale_price ?: $batch->mrp) : 0.00;
+    }
+
+    public function getBarcodeAttribute(): ?string
+    {
+        return $this->barcodes->first()?->barcode ?? null;
     }
 
     /**

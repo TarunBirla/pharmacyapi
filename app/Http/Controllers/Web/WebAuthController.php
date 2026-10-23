@@ -34,10 +34,33 @@ class WebAuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            // Set active branch in session if user has a default branch
+            /** @var User $user */
             $user = Auth::user();
-            if ($user->branch_id && !session()->has('active_branch_id')) {
-                session(['active_branch_id' => $user->branch_id]);
+
+            // If user has no organization_id or branch_id (e.g. Super Admin), assign first available defaults
+            if (!$user->organization_id) {
+                $firstOrg = \App\Models\Organization::first();
+                $firstBranch = \App\Models\Branch::first();
+                if ($firstOrg) {
+                    $user->organization_id = $firstOrg->id;
+                    $user->branch_id = $firstBranch?->id;
+                    $user->save();
+                }
+            }
+
+            // Set active branch and organization in session
+            $branchId = $user->branch_id ?? \App\Models\Branch::first()?->id;
+            $orgId = $user->organization_id ?? \App\Models\Organization::first()?->id;
+            
+            session([
+                'active_branch_id' => $branchId,
+                'active_organization_id' => $orgId,
+            ]);
+
+            // Role-based smart redirection
+            if ($user->hasRole('purchase_manager')) {
+                return redirect()->intended(route('procurement.index'))
+                    ->with('success', "Welcome back, {$user->name}!");
             }
 
             return redirect()->intended(route('pos.index'))
@@ -65,11 +88,19 @@ class WebAuthController extends Controller
         ]);
 
         $user = Auth::user();
-        $branch = Branch::where('id', $request->branch_id)
-            ->where('organization_id', $user->organization_id)
-            ->firstOrFail();
+        
+        if ($user->hasRole('super_admin')) {
+            $branch = Branch::findOrFail($request->branch_id);
+        } else {
+            $branch = Branch::where('id', $request->branch_id)
+                ->where('organization_id', $user->organization_id)
+                ->firstOrFail();
+        }
 
-        session(['active_branch_id' => $branch->id]);
+        session([
+            'active_branch_id' => $branch->id,
+            'active_organization_id' => $branch->organization_id,
+        ]);
 
         return back()->with('success', "Switched active branch to: {$branch->name}");
     }

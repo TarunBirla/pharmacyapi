@@ -13,18 +13,50 @@ class BladeFrontendWebTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('APEX PHARMA ERP');
-        $response->assertSee('pharmacist@apexpharma.com');
-        $response->assertSee('cashier@apexpharma.com');
-        $response->assertSee('purchase@apexpharma.com');
+        $response->assertSee('admin@pharmacy.com');
+        $response->assertSee('owner@apollocare.com');
+        $response->assertSee('pharmacist@apollocare.com');
+        $response->assertSee('cashier@apollocare.com');
+        $response->assertSee('purchaser@apollocare.com');
+    }
+
+    public function test_all_five_user_roles_can_login_successfully(): void
+    {
+        $rolesData = [
+            ['email' => 'admin@pharmacy.com', 'redirect' => '/pos'],
+            ['email' => 'owner@apollocare.com', 'redirect' => '/pos'],
+            ['email' => 'pharmacist@apollocare.com', 'redirect' => '/pos'],
+            ['email' => 'cashier@apollocare.com', 'redirect' => '/pos'],
+            ['email' => 'purchaser@apollocare.com', 'redirect' => '/procurement'],
+        ];
+
+        foreach ($rolesData as $role) {
+            $user = User::where('email', $role['email'])->first();
+            $this->assertNotNull($user, "User {$role['email']} must exist in database");
+
+            $response = $this->post('/login', [
+                'email' => $role['email'],
+                'password' => 'Password123!',
+            ]);
+
+            $response->assertRedirect($role['redirect']);
+            $this->assertAuthenticatedAs($user);
+
+            // Test logout
+            $logoutResponse = $this->actingAs($user)->post('/logout');
+            $logoutResponse->assertRedirect('/login');
+            $this->assertGuest();
+        }
     }
 
     public function test_pharmacist_can_login_via_web_session(): void
     {
-        $user = User::where('email', 'pharmacist@apexpharma.com')->first();
+        $user = User::where('email', 'pharmacist@apollocare.com')->first()
+            ?? User::where('email', 'pharmacist@apexpharma.com')->first();
         $this->assertNotNull($user);
 
         $response = $this->post('/login', [
-            'email' => 'pharmacist@apexpharma.com',
+            'email' => $user->email,
             'password' => 'Password123!',
         ]);
 
@@ -121,5 +153,101 @@ class BladeFrontendWebTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('System Security Audit Trail');
+    }
+
+    public function test_pos_web_checkout_and_receipt_generation(): void
+    {
+        $user = User::where('email', 'pharmacist@apexpharma.com')->first();
+        $unit = \App\Models\Unit::first();
+        $warehouse = \App\Models\Warehouse::where('branch_id', $user->branch_id)->first() ?? \App\Models\Warehouse::first();
+
+        $product = \App\Models\Product::create([
+            'organization_id' => $user->organization_id,
+            'code' => 'TEST-POS-' . rand(1000, 9999),
+            'name' => 'Web POS Test Drug',
+            'dosage_form' => 'tablet',
+            'hsn_code' => '3004',
+            'gst_rate' => 12,
+            'primary_unit_id' => $unit->id,
+            'prescription_type' => 'otc',
+            'is_active' => true,
+        ]);
+
+        $batch = \App\Models\ProductBatch::create([
+            'organization_id' => $user->organization_id,
+            'branch_id' => $user->branch_id,
+            'warehouse_id' => $warehouse->id,
+            'product_id' => $product->id,
+            'batch_number' => 'TEST-BTH-' . rand(1000, 9999),
+            'manufacturing_date' => now()->toDateString(),
+            'expiry_date' => now()->addYear()->toDateString(),
+            'mrp' => 50.00,
+            'purchase_rate' => 30.00,
+            'sale_price' => 45.00,
+            'quantity_received' => 20,
+            'quantity_available' => 20,
+            'status' => 'active',
+        ]);
+
+        $checkoutResponse = $this->actingAs($user)->postJson('/pos/checkout', [
+            'doctor_name' => 'Dr. A. K. Sharma',
+            'prescription_number' => 'RX-9988',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'batch_id' => $batch->id,
+                    'quantity' => 2,
+                    'unit_price' => 50.00,
+                    'gst_rate' => 12,
+                ]
+            ],
+            'payments' => [
+                [
+                    'payment_method' => 'cash',
+                    'amount' => 100.00,
+                ]
+            ]
+        ]);
+
+        $checkoutResponse->assertStatus(200);
+        $checkoutResponse->assertJson(['success' => true]);
+
+        $invoiceId = $checkoutResponse->json('invoice_id');
+        $this->assertNotNull($invoiceId);
+
+        // Verify printable receipt view
+        $receiptResponse = $this->actingAs($user)->get("/pos/receipt/{$invoiceId}");
+        $receiptResponse->assertStatus(200);
+        $receiptResponse->assertSee('Tax Invoice:');
+        $receiptResponse->assertSee($product->name);
+        $receiptResponse->assertSee('NET PAYABLE:');
+    }
+
+    public function test_inventory_add_medicine_and_batch_creation(): void
+    {
+        $user = User::where('email', 'pharmacist@apexpharma.com')->first();
+        $testBarcode = '890' . rand(1000000000, 9999999999);
+
+        $response = $this->actingAs($user)->post('/inventory/products', [
+            'name' => 'Dolo 650 Fast Release',
+            'generic_name' => 'Paracetamol',
+            'dosage_form' => 'tablet',
+            'strength' => '650mg',
+            'barcode' => $testBarcode,
+            'hsn_code' => '3004',
+            'gst_rate' => 12,
+            'prescription_type' => 'otc',
+            'purchase_rate' => 22.50,
+            'retail_price' => 31.00,
+            'mrp' => 35.00,
+            'reorder_level' => 30,
+        ]);
+
+        $response->assertRedirect('/inventory');
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Dolo 650 Fast Release',
+            'organization_id' => $user->organization_id,
+        ]);
     }
 }

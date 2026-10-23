@@ -14,8 +14,21 @@ class PharmacyDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Super Admin User
+        // 1. Create Super Admin Users
         $superAdminRole = Role::where('slug', 'super_admin')->first();
+        
+        // Requested Super Admin
+        $superAdminUser = User::updateOrCreate(
+            ['email' => 'admin@pharmacy.com'],
+            [
+                'name' => 'System Super Admin',
+                'password' => Hash::make('Password123!'),
+                'phone' => '+91 9999999999',
+                'status' => 'active',
+            ]
+        );
+        $superAdminUser->roles()->syncWithoutDetaching([$superAdminRole->id]);
+
         $superAdmin = User::firstOrCreate(
             ['email' => 'superadmin@pharmaerp.local'],
             [
@@ -139,7 +152,75 @@ class PharmacyDemoSeeder extends Seeder
         $cashierRole = Role::where('slug', 'cashier')->first();
         $purchaseRole = Role::where('slug', 'purchase_manager')->first();
 
-        // Org Owner
+        // Assign default org/branch to Super Admin users so they can access tenant views smoothly
+        $superAdminUser->update([
+            'organization_id' => $org->id,
+            'branch_id' => $retailBranch->id,
+        ]);
+        $superAdmin->update([
+            'organization_id' => $org->id,
+            'branch_id' => $retailBranch->id,
+        ]);
+
+        // Requested Specific Accounts:
+        // 1. Organization Owner
+        $apolloOwner = User::updateOrCreate(
+            ['email' => 'owner@apollocare.com'],
+            [
+                'organization_id' => $org->id,
+                'branch_id' => $retailBranch->id,
+                'name' => 'Dr. Apollo (Owner)',
+                'password' => Hash::make('Password123!'),
+                'phone' => '+91 9888888888',
+                'status' => 'active',
+            ]
+        );
+        $apolloOwner->roles()->sync([$ownerRole->id]);
+
+        // 2. Pharmacist
+        $apolloPharmacist = User::updateOrCreate(
+            ['email' => 'pharmacist@apollocare.com'],
+            [
+                'organization_id' => $org->id,
+                'branch_id' => $retailBranch->id,
+                'name' => 'Apollo Registered Pharmacist',
+                'pharmacist_reg_number' => 'APOLLO-PH-2024-88',
+                'password' => Hash::make('Password123!'),
+                'phone' => '+91 9777777777',
+                'status' => 'active',
+            ]
+        );
+        $apolloPharmacist->roles()->sync([$pharmacistRole->id]);
+
+        // 3. Cashier
+        $apolloCashier = User::updateOrCreate(
+            ['email' => 'cashier@apollocare.com'],
+            [
+                'organization_id' => $org->id,
+                'branch_id' => $retailBranch->id,
+                'name' => 'Apollo POS Cashier',
+                'password' => Hash::make('Password123!'),
+                'phone' => '+91 9666666666',
+                'status' => 'active',
+            ]
+        );
+        $apolloCashier->roles()->sync([$cashierRole->id]);
+
+        // 4. Purchase Manager
+        $apolloPurchaser = User::updateOrCreate(
+            ['email' => 'purchaser@apollocare.com'],
+            [
+                'organization_id' => $org->id,
+                'branch_id' => $wholesaleBranch->id,
+                'name' => 'Apollo Purchase Manager',
+                'password' => Hash::make('Password123!'),
+                'phone' => '+91 9555555555',
+                'status' => 'active',
+            ]
+        );
+        $apolloPurchaser->roles()->sync([$purchaseRole->id]);
+
+        // Org Owner (Apex)
         $owner = User::firstOrCreate(
             ['email' => 'owner@apexpharma.com'],
             [

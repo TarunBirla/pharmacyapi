@@ -89,7 +89,32 @@ class PosWebController extends Controller
             $user = Auth::user();
             $data = $request->all();
             $data['invoice_type'] = $data['invoice_type'] ?? 'retail';
-            $data['branch_id'] = session('active_branch_id', $user->branch_id);
+            $branchId = session('active_branch_id', $user->branch_id);
+            $data['branch_id'] = $branchId;
+
+            $warehouse = \App\Models\Warehouse::where('branch_id', $branchId)->first() ?? \App\Models\Warehouse::first();
+            $data['warehouse_id'] = $data['warehouse_id'] ?? $warehouse?->id;
+
+            // Map batch_id to product_batch_id
+            $data['items'] = array_map(function ($it) {
+                return [
+                    'product_id' => $it['product_id'],
+                    'product_batch_id' => $it['batch_id'] ?? $it['product_batch_id'],
+                    'quantity' => (float)$it['quantity'],
+                    'unit_price' => (float)$it['unit_price'],
+                    'discount_percent' => (float)($it['discount_percent'] ?? 0),
+                    'gst_rate' => (float)($it['gst_rate'] ?? 0),
+                ];
+            }, $request->input('items', []));
+
+            // Map payments to ensure payment_mode is set
+            $data['payments'] = array_map(function ($p) {
+                return [
+                    'payment_mode' => $p['payment_mode'] ?? $p['payment_method'] ?? 'cash',
+                    'amount' => (float)$p['amount'],
+                    'transaction_reference' => $p['transaction_reference'] ?? $p['reference_number'] ?? null,
+                ];
+            }, $request->input('payments', []));
 
             $invoice = $this->salesService->postSalesInvoice($data, $user);
 

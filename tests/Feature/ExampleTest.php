@@ -13,7 +13,9 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        // Root redirects guest users to login screen
-        $response->assertRedirect('/login');
+        // Root returns 200 and renders the public ERP landing page
+        $response->assertStatus(200);
+        $response->assertSee('APEX PHARMA');
+        $response->assertSee('Launch POS Counter');
     }
 }

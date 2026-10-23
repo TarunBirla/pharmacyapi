@@ -60,7 +60,7 @@
                     @forelse($invoices as $inv)
                     <tr class="hover:bg-slate-50">
                         <td class="py-3 px-4">
-                            <div class="font-bold text-slate-900 font-mono">#{{ $inv->supplier_invoice_number }}</div>
+                            <div class="font-bold text-slate-900 font-mono">#{{ $inv->invoice_number }}</div>
                             <div class="text-[11px] text-slate-500 font-sans">{{ $inv->supplier->name }} (GSTIN: {{ $inv->supplier->gstin ?? 'N/A' }})</div>
                         </td>
                         <td class="py-3 px-4 font-mono text-slate-600">{{ $inv->invoice_date }}</td>

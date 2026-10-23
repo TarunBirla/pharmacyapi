@@ -40,7 +40,10 @@ class SalesService
             $invoiceNumber = sprintf('%s-%06d', $branch->invoice_prefix ?: 'INV', $branch->next_invoice_number);
             $branch->increment('next_invoice_number');
 
-            $warehouseId = $data['warehouse_id'] ?? $branch->warehouses()->where('is_default', true)->first()->id;
+            $defaultWarehouse = $branch->warehouses()->where('is_default', true)->first() 
+                ?? $branch->warehouses()->first() 
+                ?? Warehouse::first();
+            $warehouseId = $data['warehouse_id'] ?? $defaultWarehouse?->id;
 
             // Customer verification
             $customer = null;
@@ -246,8 +249,8 @@ class SalesService
                         'payment_number' => 'PAY-' . strtoupper(Str::random(8)),
                         'payment_date' => $invoice->invoice_date,
                         'amount' => $amt,
-                        'payment_mode' => $paymentData['payment_mode'], // cash, card, upi, bank_transfer
-                        'transaction_reference' => $paymentData['transaction_reference'] ?? null,
+                        'payment_mode' => $paymentData['payment_mode'] ?? $paymentData['payment_method'] ?? 'cash', // cash, card, upi, bank_transfer
+                        'transaction_reference' => $paymentData['transaction_reference'] ?? $paymentData['reference_number'] ?? null,
                         'created_by' => $user->id,
                     ]);
                 }

@@ -82,6 +82,14 @@ Route::get('/setup-database', function () {
     ]), $statusCode);
 });
 
+// Public Landing Page
+Route::get('/', function () {
+    if (Illuminate\Support\Facades\Auth::check()) {
+        return redirect()->route('pos.index');
+    }
+    return view('welcome');
+})->name('landing');
+
 // Authentication Routes
 Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login'])->name('login.post');
@@ -89,7 +97,6 @@ Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
 // Authenticated ERP Web Application
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', fn () => redirect()->route('pos.index'));
     Route::post('/switch-branch', [WebAuthController::class, 'switchBranch'])->name('branch.switch');
 
     // POS Billing Counter
