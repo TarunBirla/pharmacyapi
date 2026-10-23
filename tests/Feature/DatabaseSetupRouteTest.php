@@ -13,6 +13,6 @@ class DatabaseSetupRouteTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Pharmacy ERP Live Deployment Setup');
         $response->assertSee('SUCCESS 200 OK');
-        $response->assertSee('admin@pharmacy.com');
+        $response->assertSee('superadmin@pharmaerp.local');
     }
 }

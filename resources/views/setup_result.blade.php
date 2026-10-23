@@ -82,27 +82,23 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <div class="text-[10px] uppercase font-bold text-emerald-400">Super Admin</div>
-                    <div class="text-xs text-slate-200 font-mono mt-0.5">admin@pharmacy.com</div>
+                    <div class="text-xs text-slate-200 font-mono mt-0.5">superadmin@pharmaerp.local</div>
                 </div>
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <div class="text-[10px] uppercase font-bold text-amber-400">Org Owner</div>
-                    <div class="text-xs text-slate-200 font-mono mt-0.5">owner@apollocare.com</div>
+                    <div class="text-xs text-slate-200 font-mono mt-0.5">owner@apexpharma.com</div>
                 </div>
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <div class="text-[10px] uppercase font-bold text-blue-400">Pharmacist</div>
-                    <div class="text-xs text-slate-200 font-mono mt-0.5">pharmacist@apollocare.com</div>
+                    <div class="text-xs text-slate-200 font-mono mt-0.5">pharmacist@apexpharma.com</div>
                 </div>
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <div class="text-[10px] uppercase font-bold text-teal-400">Cashier (POS)</div>
-                    <div class="text-xs text-slate-200 font-mono mt-0.5">cashier@apollocare.com</div>
+                    <div class="text-xs text-slate-200 font-mono mt-0.5">cashier@apexpharma.com</div>
                 </div>
                 <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <div class="text-[10px] uppercase font-bold text-purple-400">Purchase Mgr</div>
-                    <div class="text-xs text-slate-200 font-mono mt-0.5">purchaser@apollocare.com</div>
-                </div>
-                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    <div class="text-[10px] uppercase font-bold text-rose-400">Branch Manager</div>
-                    <div class="text-xs text-slate-200 font-mono mt-0.5">manager@apollocare.com</div>
+                    <div class="text-xs text-slate-200 font-mono mt-0.5">purchase@apexpharma.com</div>
                 </div>
             </div>
         </div>
